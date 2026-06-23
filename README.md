@@ -1,14 +1,14 @@
 # Reward Service
 
-Spring Boot 4.1 and Java 17 REST API for calculating retailer reward points.
+Spring Boot 3.5.0 and Java 17 REST API for calculating retailer reward points.
 
 ## Reward Rule
 
 A customer earns:
 
-- 2 points for every whole dollar spent over `$100` in a transaction.
-- 1 point for every whole dollar spent between `$50` and `$100`.
-- Example: `$120` earns `2 x $20 + 1 x $50 = 90` points.
+- 2 points for every whole dollar spent over `$100` in a transaction
+- 1 point for every whole dollar spent between `$50` and `$100`
+- Example: `$120` earns `90` points
 
 ## Base URL
 
@@ -23,12 +23,6 @@ All API endpoints are served from:
 `GET /api/v1/customers`
 
 Returns the seeded customer list, sorted by full name.
-
-Request:
-
-```http
-GET /api/v1/customers
-```
 
 Response `200 OK`:
 
@@ -52,11 +46,11 @@ Response fields:
 
 `GET /api/v1/rewards`
 
-Returns the reward summary for one customer over a dynamic date range.
+Returns the reward summary for one customer over a date range.
 
 Request query parameters:
 
-- `customerId` - required
+- `customerId` - required, positive number
 - `startDate` - required, format `yyyy-MM-dd`
 - `endDate` - required, format `yyyy-MM-dd`
 
@@ -79,28 +73,27 @@ Response `200 OK`:
   "totalPoints": 546,
   "monthlyRewards": [
     {
-      "month": "2026-04",
+      "year": 2026,
+      "month": "April",
       "transactionCount": 2,
       "totalSpend": 204.25,
-      "points": 124,
-      "transactions": [
-        {
-          "transactionId": 1,
-          "transactionDate": "2026-04-03",
-          "amount": 84.25,
-          "merchantName": "Reliance Fresh",
-          "points": 34,
-          "breakdown": {
-            "dollarsBetweenFiftyAndOneHundred": 34,
-            "dollarsOverOneHundred": 0,
-            "pointsBetweenFiftyAndOneHundred": 34,
-            "pointsOverOneHundred": 0
-          }
-        }
-      ]
+      "points": 124
+    },
+    {
+      "year": 2026,
+      "month": "May",
+      "transactionCount": 2,
+      "totalSpend": 264.15,
+      "points": 274
+    },
+    {
+      "year": 2026,
+      "month": "June",
+      "transactionCount": 1,
+      "totalSpend": 149.99,
+      "points": 148
     }
-  ],
-  "generatedAt": "2026-06-17T07:45:00Z"
+  ]
 }
 ```
 
@@ -113,43 +106,28 @@ Response fields:
 - `endDate`: request end date
 - `transactionCount`: total transactions found in the date range
 - `totalPoints`: total reward points across the full range
-- `monthlyRewards`: monthly breakdown
-- `generatedAt`: response generation timestamp
+- `monthlyRewards`: month-by-month summary
 
 Monthly reward fields:
 
-- `month`: month in `yyyy-MM` format
+- `year`: calendar year
+- `month`: month name
 - `transactionCount`: transactions in that month
 - `totalSpend`: total spending for the month
 - `points`: reward points earned in the month
-- `transactions`: per-transaction reward details
-
-Transaction reward fields:
-
-- `transactionId`: transaction identifier
-- `transactionDate`: transaction date
-- `amount`: purchase amount
-- `merchantName`: merchant name
-- `points`: reward points for the transaction
-- `breakdown`: point calculation details
-
-Breakdown fields:
-
-- `dollarsBetweenFiftyAndOneHundred`: dollars counted at 1 point each
-- `dollarsOverOneHundred`: dollars counted at 2 points each
-- `pointsBetweenFiftyAndOneHundred`: points earned from the $50-$100 portion
-- `pointsOverOneHundred`: points earned from the over-$100 portion
 
 Error response:
 
 ```json
 {
-  "timestamp": "2026-06-17T07:45:00Z",
-  "status": 404,
-  "error": "Not Found",
-  "message": "Customer 99 was not found",
+  "timestamp": "2026-06-23T07:45:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
   "path": "/api/v1/rewards",
-  "details": []
+  "details": [
+    "endDate: must not be null"
+  ]
 }
 ```
 
@@ -180,11 +158,12 @@ Sample merchants include:
 
 ## Technical Details
 
-- Java 17 release target.
-- Spring Boot 4.1.0.
-- Spring Web MVC, Spring Data JPA, H2, Bean Validation, Actuator.
-- JaCoCo is configured for test coverage reporting and build quality gates.
-- Tests use Mockito-based unit testing.
+- Java 17 release target
+- Spring Boot 3.5.0
+- Spring Web MVC, Spring Data JPA, H2, Bean Validation, Actuator
+- Lombok is used to reduce boilerplate in the domain and service layers
+- JaCoCo is configured for test coverage reporting and build quality gates
+- Tests use Mockito-based unit tests plus Spring integration tests against H2
 
 ## Run
 
