@@ -1,18 +1,15 @@
 package com.charter.reward.controller;
 
 import com.charter.reward.dto.CustomerResponse;
-import com.charter.reward.dto.RewardQueryRequest;
 import com.charter.reward.dto.RewardSummaryResponse;
 import com.charter.reward.service.RewardService;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -20,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/v1")
-@Validated
 @RequiredArgsConstructor
 public class RewardController {
 
@@ -32,12 +28,10 @@ public class RewardController {
 	}
 
 	@GetMapping("/rewards")
-	public RewardSummaryResponse calculateRewards(@ModelAttribute @Valid RewardQueryRequest request) {
-		return rewardService.calculateRewards(Long.valueOf(request.customerId()), parseDate(request.startDate()),
-				parseDate(request.endDate()));
-	}
-
-	private LocalDate parseDate(String value) {
-		return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
+	public RewardSummaryResponse calculateRewards(
+			@RequestParam Long customerId,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+		return rewardService.calculateRewards(customerId, startDate, endDate);
 	}
 }

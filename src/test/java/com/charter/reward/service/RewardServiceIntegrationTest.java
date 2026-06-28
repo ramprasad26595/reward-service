@@ -48,11 +48,43 @@ class RewardServiceIntegrationTest {
 		RewardSummaryResponse response = rewardService.calculateRewards(1L, LocalDate.parse("2026-04-01"),
 				LocalDate.parse("2026-06-30"));
 
-		assertThat(response.customerName()).isEqualTo("Aarav Sharma");
+		assertThat(response.customerDetails().fullName()).isEqualTo("Aarav Sharma");
 		assertThat(response.transactionCount()).isEqualTo(5);
-		assertThat(response.totalPoints()).isEqualTo(546);
-		assertThat(response.monthlyRewards()).extracting("month").containsExactly("April", "May", "June");
-		assertThat(response.monthlyRewards()).extracting("points").containsExactly(124, 274, 148);
+		assertThat(response.transactionDetails()).hasSize(5);
+		assertThat(response.totalRewardPoints()).isEqualTo(546);
+		assertThat(response.monthlyRewardPoints()).extracting("month").containsExactly("April", "May", "June");
+		assertThat(response.monthlyRewardPoints()).extracting("points").containsExactly(124, 274, 148);
+	}
+
+	@Test
+	void exposesPerTransactionRewardBreakdown() {
+		RewardSummaryResponse response = rewardService.calculateRewards(1L, LocalDate.parse("2026-04-01"),
+				LocalDate.parse("2026-04-30"));
+
+		// $84.25 -> 34 points (cents ignored), $120.00 -> 90 points
+		assertThat(response.transactionDetails()).extracting("points").containsExactly(34, 90);
+		assertThat(response.transactionDetails()).extracting("merchantName")
+				.containsExactly("Reliance Fresh", "Westside");
+	}
+
+	@Test
+	void returnsEmptyBreakdownWhenNoTransactionsInRange() {
+		RewardSummaryResponse response = rewardService.calculateRewards(1L, LocalDate.parse("2020-01-01"),
+				LocalDate.parse("2020-01-31"));
+
+		assertThat(response.transactionCount()).isZero();
+		assertThat(response.transactionDetails()).isEmpty();
+		assertThat(response.totalRewardPoints()).isZero();
+		assertThat(response.monthlyRewardPoints()).extracting("points").containsExactly(0);
+	}
+
+	@Test
+	void supportsSameDayDateRange() {
+		RewardSummaryResponse response = rewardService.calculateRewards(1L, LocalDate.parse("2026-04-21"),
+				LocalDate.parse("2026-04-21"));
+
+		assertThat(response.transactionCount()).isEqualTo(1);
+		assertThat(response.totalRewardPoints()).isEqualTo(90);
 	}
 
 	@Test
@@ -66,8 +98,8 @@ class RewardServiceIntegrationTest {
 				LocalDate.parse("2026-06-30"));
 
 		assertThat(response.transactionCount()).isEqualTo(6);
-		assertThat(response.totalPoints()).isEqualTo(546);
-		assertThat(response.monthlyRewards().get(1).transactionCount()).isEqualTo(3);
+		assertThat(response.totalRewardPoints()).isEqualTo(546);
+		assertThat(response.monthlyRewardPoints().get(1).transactionCount()).isEqualTo(3);
 	}
 
 	@Test

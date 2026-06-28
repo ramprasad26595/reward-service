@@ -7,12 +7,11 @@ import java.util.List;
  * Customer reward summary for a requested date range.
  */
 public record RewardSummaryResponse(
-		Long customerId,
-		String customerName,
-		String email,
+		CustomerResponse customerDetails,
 		LocalDate startDate,
 		LocalDate endDate,
 		int transactionCount,
-		int totalPoints,
-		List<MonthlyRewardResponse> monthlyRewards) {
+		List<TransactionDetailResponse> transactionDetails,
+		List<MonthlyRewardResponse> monthlyRewardPoints,
+		int totalRewardPoints) {
 }

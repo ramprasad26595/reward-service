@@ -1,12 +1,17 @@
 package com.charter.reward.service;
 
-import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.List;
 import com.charter.reward.dto.CustomerResponse;
 import com.charter.reward.dto.RewardSummaryResponse;
 import com.charter.reward.entity.Customer;
 import com.charter.reward.entity.PurchaseTransaction;
+import com.charter.reward.exception.ResourceNotFoundException;
+import com.charter.reward.mapper.RewardSummaryMapper;
+import com.charter.reward.repository.CustomerRepository;
+import com.charter.reward.repository.PurchaseTransactionRepository;
+import com.charter.reward.validation.RewardDateRangeValidator;
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,14 +22,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RewardServiceImpl implements RewardService {
 
-	private final RewardCustomerFinder customerFinder;
-	private final RewardTransactionFinder transactionFinder;
+	private final CustomerRepository customerRepository;
+	private final PurchaseTransactionRepository transactionRepository;
 	private final RewardDateRangeValidator dateRangeValidator;
-	private final RewardSummaryAssembler summaryAssembler;
+	private final RewardSummaryMapper summaryAssembler;
 
 	@Override
 	public List<CustomerResponse> getCustomers() {
-		return customerFinder.findAll().stream()
+		return customerRepository.findAll().stream()
 				.sorted(Comparator.comparing(Customer::getFullName))
 				.map(this::toCustomerResponse)
 				.toList();
@@ -33,9 +38,10 @@ public class RewardServiceImpl implements RewardService {
 	@Override
 	public RewardSummaryResponse calculateRewards(Long customerId, LocalDate startDate, LocalDate endDate) {
 		dateRangeValidator.validate(startDate, endDate);
-		Customer customer = customerFinder.findById(customerId);
-		List<PurchaseTransaction> transactions = transactionFinder.findByCustomerIdAndDateRange(customerId, startDate,
-				endDate);
+		Customer customer = customerRepository.findById(customerId)
+				.orElseThrow(() -> new ResourceNotFoundException("Customer " + customerId + " was not found"));
+		List<PurchaseTransaction> transactions = transactionRepository
+				.findByCustomerIdAndTransactionDateBetweenOrderByTransactionDateAsc(customerId, startDate, endDate);
 		return summaryAssembler.assemble(customer, startDate, endDate, transactions);
 	}
 

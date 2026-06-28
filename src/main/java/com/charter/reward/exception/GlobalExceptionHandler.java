@@ -14,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Centralized API exception handling.
@@ -56,6 +57,14 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request) {
 		return build(HttpStatus.BAD_REQUEST, "Validation failed", request,
 				List.of(ex.getParameterName() + ": is required"));
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+			HttpServletRequest request) {
+		String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "expected type";
+		String detail = ex.getName() + ": '" + ex.getValue() + "' could not be converted to " + requiredType;
+		return build(HttpStatus.BAD_REQUEST, "Validation failed", request, List.of(detail));
 	}
 
 	@ExceptionHandler(Exception.class)

@@ -10,6 +10,18 @@ A customer earns:
 - 1 point for every whole dollar spent between `$50` and `$100`
 - Example: `$120` earns `90` points
 
+### Fractional Amounts
+
+Reward points are calculated on **whole dollars only** — any cents are dropped
+(rounded down) before points are computed. This is applied per transaction.
+
+Worked examples:
+
+- `$84.25` → whole dollars are `$84`, which is `$34` over `$50` → `34` points
+- `$100.99` → whole dollars are `$100` → `50` points (the cents above `$100` are ignored)
+- `$120.00` → `50` points for the `$50`–`$100` band plus `2 × 20` for the amount
+  over `$100` → `90` points
+
 ## Base URL
 
 All API endpoints are served from:
@@ -64,14 +76,52 @@ Response `200 OK`:
 
 ```json
 {
-  "customerId": 1,
-  "customerName": "Aarav Sharma",
-  "email": "aarav.sharma@example.com",
+  "customerDetails": {
+    "customerId": 1,
+    "fullName": "Aarav Sharma",
+    "email": "aarav.sharma@example.com"
+  },
   "startDate": "2026-04-01",
   "endDate": "2026-06-30",
   "transactionCount": 5,
-  "totalPoints": 546,
-  "monthlyRewards": [
+  "transactionDetails": [
+    {
+      "transactionId": 1,
+      "transactionDate": "2026-04-03",
+      "merchantName": "Reliance Fresh",
+      "amount": 84.25,
+      "points": 34
+    },
+    {
+      "transactionId": 2,
+      "transactionDate": "2026-04-21",
+      "merchantName": "Westside",
+      "amount": 120.00,
+      "points": 90
+    },
+    {
+      "transactionId": 3,
+      "transactionDate": "2026-05-09",
+      "merchantName": "Cafe Coffee Day",
+      "amount": 52.40,
+      "points": 2
+    },
+    {
+      "transactionId": 4,
+      "transactionDate": "2026-05-26",
+      "merchantName": "Pepperfry",
+      "amount": 211.75,
+      "points": 272
+    },
+    {
+      "transactionId": 5,
+      "transactionDate": "2026-06-12",
+      "merchantName": "Croma",
+      "amount": 149.99,
+      "points": 148
+    }
+  ],
+  "monthlyRewardPoints": [
     {
       "year": 2026,
       "month": "April",
@@ -93,20 +143,34 @@ Response `200 OK`:
       "totalSpend": 149.99,
       "points": 148
     }
-  ]
+  ],
+  "totalRewardPoints": 546
 }
 ```
 
+The per-transaction `points` make every reward calculation verifiable directly
+from the response, without reading the source. For example `$84.25` ignores the
+cents and scores `34` points (`$84 − $50`); each month's `points` is the sum of
+its transactions, and `totalRewardPoints` is the sum across all months.
+
 Response fields:
 
-- `customerId`: customer identifier
-- `customerName`: customer full name
-- `email`: customer email address
+- `customerDetails`: customer identity block (`customerId`, `fullName`, `email`)
 - `startDate`: request start date
 - `endDate`: request end date
 - `transactionCount`: total transactions found in the date range
-- `totalPoints`: total reward points across the full range
-- `monthlyRewards`: month-by-month summary
+- `transactionDetails`: per-transaction breakdown with the points each one earned
+- `monthlyRewardPoints`: month-by-month summary (every month in the range, even
+  empty ones)
+- `totalRewardPoints`: total reward points across the full range
+
+Transaction detail fields:
+
+- `transactionId`: transaction identifier
+- `transactionDate`: date the purchase was made
+- `merchantName`: merchant name
+- `amount`: purchase amount
+- `points`: reward points earned for that single transaction
 
 Monthly reward fields:
 
@@ -116,7 +180,10 @@ Monthly reward fields:
 - `totalSpend`: total spending for the month
 - `points`: reward points earned in the month
 
-Error response:
+Error responses use the same payload shape. Validation problems — a missing
+parameter, a non-numeric `customerId`, or a malformed/invalid date such as
+`2026-13-45` — return `400 Bad Request`. An `endDate` earlier than `startDate`
+also returns `400`. An unknown `customerId` returns `404 Not Found`.
 
 ```json
 {
@@ -126,14 +193,17 @@ Error response:
   "message": "Validation failed",
   "path": "/api/v1/rewards",
   "details": [
-    "endDate: must not be null"
+    "startDate: '2026-13-45' could not be converted to LocalDate"
   ]
 }
 ```
 
 ## Seed Data
 
-The application loads dummy data on startup through `CommandLineRunner`.
+The application loads demo data from `src/main/resources/data.sql`, which Spring
+runs automatically after Hibernate creates the schema
+(`spring.jpa.defer-datasource-initialization=true`). The seed data can be changed
+without recompiling the application.
 
 Seeded customers:
 
@@ -179,6 +249,19 @@ mvn verify
 ```
 
 The JaCoCo report is generated at `target/site/jacoco/index.html`.
+
+### Test Evidence
+
+The `docs/evidence` folder captures proof of the test and API behaviour:
+
+- `docs/evidence/build-test-results-logs.txt` — full `mvn test` run log
+  (34 tests, all passing)
+- `docs/evidence/postman/screenshots/` — Postman screenshots covering success,
+  `400` validation/negative scenarios, `404` not found, and `500` responses
+
+> Add a screenshot of the `mvn test` run (the green "BUILD SUCCESS" summary) to
+> `docs/evidence/` alongside the log file so the test execution is documented
+> visually as well as in text.
 
 ## H2 Console
 
