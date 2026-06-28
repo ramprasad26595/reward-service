@@ -33,25 +33,6 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, List.of());
 	}
 
-	@ExceptionHandler(ConstraintViolationException.class)
-	public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException ex,
-			HttpServletRequest request) {
-		List<String> details = ex.getConstraintViolations().stream()
-				.map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
-				.toList();
-		return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
-	}
-
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-			HttpServletRequest request) {
-		LinkedHashMap<String, String> uniqueDetails = new LinkedHashMap<>();
-		ex.getBindingResult().getFieldErrors().forEach(fieldError ->
-				uniqueDetails.putIfAbsent(fieldError.getField(), formatFieldError(fieldError)));
-		List<String> details = List.copyOf(uniqueDetails.values());
-		return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
-	}
-
 	@ExceptionHandler(MissingServletRequestParameterException.class)
 	public ResponseEntity<ApiErrorResponse> handleMissingRequestParameter(MissingServletRequestParameterException ex,
 			HttpServletRequest request) {
@@ -71,10 +52,6 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
 		log.error("Unexpected error while handling {}", request.getRequestURI(), ex);
 		return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request, List.of());
-	}
-
-	private String formatFieldError(FieldError fieldError) {
-		return fieldError.getField() + ": " + fieldError.getDefaultMessage();
 	}
 
 	private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String message, HttpServletRequest request,
