@@ -250,19 +250,6 @@ mvn verify
 
 The JaCoCo report is generated at `target/site/jacoco/index.html`.
 
-### Test Evidence
-
-The `docs/evidence` folder captures proof of the test and API behaviour:
-
-- `docs/evidence/build-test-results-logs.txt` — full `mvn test` run log
-  (34 tests, all passing)
-- `docs/evidence/postman/screenshots/` — Postman screenshots covering success,
-  `400` validation/negative scenarios, `404` not found, and `500` responses
-
-> Add a screenshot of the `mvn test` run (the green "BUILD SUCCESS" summary) to
-> `docs/evidence/` alongside the log file so the test execution is documented
-> visually as well as in text.
-
 ## H2 Console
 
 - `http://localhost:8080/h2-console`
